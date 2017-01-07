@@ -13,6 +13,12 @@
 // 5. Then create a Node application called `bamazonCustomer.js`. 
 //Running this application will first display all of the items available 
 //for sale. Include the ids, names, and prices of products for sale.
+//
+// 2. Modify your `bamazonCustomer.js` app so that when a customer purchases anything from 
+//  * the store, the program will calculate the total sales from each transaction.
+// 	* Add the revenue from each transaction to the `total_sales` column for the related department.
+// 	* Make sure your app still updates the inventory listed in the `products` column.
+
 var mysql = require("mysql");
 var inquirer = require("inquirer");
 var connection = mysql.createConnection({
@@ -43,17 +49,33 @@ connection.query("select * from products", function(err, rows) {
 });
 }
 
+var displaydepartment = function() {
+connection.query("select * from departments", function(err, rows) {
+    console.log( "Dept Id " + " Dept Name " +  " Ovrhd Cost " + " Total Sales " +"\n");
+    console.log( "------- " + " --------- " +  " ---------- " + " ----------- " +"\n");
+
+    for(var i =0; i < rows.length; i++) {
+         console.log( rows[i].department_id + "        " + 
+         rows[i].department_name + "         " + 
+         rows[i].over_head_costs +"       "+ 
+         rows[i].total_sales +"\n");
+    }
+});
+}
+
 
 var checkinventory = function(id, cb) {
     connection.query("select * from products where ?", 
     [{item_id : id}], function(err, rows) {
-        // for(var i =0; i < rows.length; i++) {
-        //     console.log( "Selected id " + rows[i].item_id + " name " + rows[i].product_name + " qty " + rows[i].stock_quantity +"\n");
-        // }
         cb(rows[0]);
     });
 }
-
+var checkdepartment = function(id, cb) {
+    connection.query("select * from departments where ?", 
+    [{department_name : id}], function(err, rows) {
+        cb(rows[0]);
+    });
+}
 
 // 6. The app should then prompt users with two messages.
 // 	* The first should ask them the ID of the product they would like to buy.
@@ -90,9 +112,28 @@ var askCustomer = function() {
                         console.log("Updated the inventory");
                         displayinventory();
                         console.log("Total cost of purchase : " + rowInInventory.price * response2.numunits);
-                        connection.end();
+                        //connection.end();
                     });
-                
+                // 	* Add the revenue from each transaction to the `total_sales` column for the related department.
+                checkdepartment(rowInInventory.department_name, function(rowInDepartment){
+                    //update total sales
+                console.log("Updating department");
+                var updatedQty = rowInDepartment.total_sales + response2.numunits*rowInInventory.price;
+                connection.query('update departments set ? where ?',
+                    [{
+                        total_sales: updatedQty
+                    },
+                    {
+                        department_name: rowInInventory.department_name
+                    }],
+                    function (err, rows) {
+                        if (err) throw err;
+                        console.log("Updated the department");
+                        displaydepartment();
+                        //connection.end();
+                        askCustomer();
+                    });
+                });
                  }else {
                 console.log("Insufficient quantity!!");
                 connection.end();

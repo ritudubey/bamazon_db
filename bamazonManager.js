@@ -177,10 +177,6 @@ var itemPrompts = [{
     }];
 
 var handleNewItemResponse = function(answers) {
-    //var newItem = new Item(answers.name, answers.department, anwers.price, answers.quantity);
-    //newItem.printInfo();
-    //
-    //console.log("I am in handleNewItemResponse" + answers);
     connection.query("insert into products set product_name=?, department_name=?, price=?, stock_quantity=?",
     [answers.name, answers.department, answers.price, answers.quantity], function(err, res) {
         //console.log("I am in insert");
@@ -215,4 +211,3 @@ var addNewProduct = function(){
 }
 
 displayMenu();
-//addNewProduct();
